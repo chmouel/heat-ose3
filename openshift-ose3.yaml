@@ -31,6 +31,11 @@ parameters:
     type: string
     description: Red Hat pool to attach
 
+  ansible_branch:
+    type: string
+    default: v3-beta2
+    description: The Ansible branch to checkout from openshift-ansible
+
 resources:
   node_wait_handle:
     type: "AWS::CloudFormation::WaitConditionHandle"
@@ -43,6 +48,16 @@ resources:
       Handle:
         get_resource: node_wait_handle
       Timeout: "6000"
+
+  write_heat_params:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: {get_file: fragments/write-heat-params-master.yaml}
+          params:
+            "$ANSIBLE_BRANCH": {get_param: ansible_branch}
 
   rhel_config:
     type: "OS::Heat::SoftwareConfig"
@@ -61,6 +76,12 @@ resources:
     properties:
       group: ungrouped
       config: {get_file: fragments/package_install_uninstall.sh}
+
+  ssh_config:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config: {get_file: fragments/ssh_config.sh}
 
   docker:
     type: "OS::Heat::SoftwareConfig"
@@ -95,10 +116,12 @@ resources:
     type: "OS::Heat::MultipartMime"
     properties:
       parts:
+        - config: {get_resource: write_heat_params}
         - config: {get_resource: openshift_user}
         - config: {get_resource: rhel_config}
         - config: {get_resource: packages_install_uninstall}
         - config: {get_resource: docker}
+        - config: {get_resource: ssh_config}
         - config: {get_resource: run_install}
         - config: {get_resource: cfn_signal}
 
