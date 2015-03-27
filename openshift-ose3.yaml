@@ -1,7 +1,7 @@
 heat_template_version: 2013-05-23
 
 description: >
-  This is Chmou World!
+  Install an all in one OpenShift v3
 
 parameters:
   server_image:
