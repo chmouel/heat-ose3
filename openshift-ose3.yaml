@@ -1,0 +1,113 @@
+heat_template_version: 2013-05-23
+
+description: >
+  This is Chmou World!
+
+parameters:
+  server_image:
+    type: string
+    default: rhel71
+    description: glance image used to boot the server
+
+  server_flavor:
+    type: string
+    default: m1.medium
+    description: flavor to use when booting the server
+
+  ssh_key_name:
+    type: string
+    description: name of ssh key to be provisioned on our server
+    default: chmouel
+
+  rhel_user:
+    type: string
+    description: rhel user
+
+  rhel_password:
+    type: string
+    description: rhel password
+
+  rhel_pool:
+    type: string
+    description: Red Hat pool to attach
+
+resources:
+  node_wait_handle:
+    type: "AWS::CloudFormation::WaitConditionHandle"
+
+  node_wait_condition:
+    type: "AWS::CloudFormation::WaitCondition"
+    depends_on:
+      - master
+    properties:
+      Handle:
+        get_resource: node_wait_handle
+      Timeout: "6000"
+
+  rhel_config:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: {get_file: fragments/rhel_config.sh}
+          params:
+            "$RHEL_USER$": { get_param: rhel_user }
+            "$RHEL_PASSWORD$": { get_param: rhel_password }
+            "$RHEL_POOL$": { get_param: rhel_pool }
+
+  packages_install_uninstall:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config: {get_file: fragments/package_install_uninstall.sh}
+
+  docker:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config: {get_file: fragments/docker.sh}
+
+  openshift_user:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config: {get_file: fragments/openshift-user.yaml}
+
+  run_install:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config: {get_file: fragments/run_install.sh}
+
+
+  cfn_signal:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config:
+        str_replace:
+          template: {get_file: fragments/cfn-signal.sh}
+          params:
+            "$WAIT_HANDLE$": { get_resource: node_wait_handle}
+
+  node_init:
+    type: "OS::Heat::MultipartMime"
+    properties:
+      parts:
+        - config: {get_resource: openshift_user}
+        - config: {get_resource: rhel_config}
+        - config: {get_resource: packages_install_uninstall}
+        - config: {get_resource: docker}
+        - config: {get_resource: run_install}
+        - config: {get_resource: cfn_signal}
+
+  master:
+    type: "OS::Nova::Server"
+    properties:
+      image: {get_param: server_image}
+      flavor: {get_param: server_flavor}
+      key_name: { get_param: ssh_key_name}
+
+      user_data_format: RAW
+      user_data: {get_resource: node_init}
