@@ -34,3 +34,12 @@ and you can run it like this ::
 
 which should spawn up the full stack and where you can log into with ssh
 `openshift@ip_address`
+
+Usage
+-----
+
+When the stack has been created you will be able to log into your master with
+the user `openshift` and then using the `osc` command. There is a few demo
+templates to play with in the training repository here::
+
+  https://github.com/openshift/training/
