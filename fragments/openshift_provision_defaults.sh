@@ -17,4 +17,4 @@ openshift ex registry --create \
           --credentials=/var/lib/openshift/openshift.local.certificates/openshift-client/.kubeconfig \
           --images='registry.access.redhat.com/openshift3_beta/ose-${component}:${version}'
 
-su - openshift -c "mkdir ~/.kube/;cd ~/.kube/;openshift ex login --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/root.crt --cluster=master --server=https://$(hostname -f):8443 --namespace=demo --username=joe --password=redhat"
+su - openshift -c "mkdir ~/.kube/;cd ~/.kube/;openshift ex login --certificate-authority=/var/lib/openshift/openshift.local.certificates/ca/root.crt --cluster=master --server=https://localhost:8443 --namespace=demo --username=joe --password=redhat"
