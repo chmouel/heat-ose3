@@ -113,11 +113,15 @@ resources:
       group: ungrouped
       config: {get_file: fragments/openshift-user.yaml}
 
-  openshift_user:
+  openshift_hostname:
     type: "OS::Heat::SoftwareConfig"
     properties:
       group: ungrouped
-      config: {get_file: fragments/openshift-user.yaml}
+      config:
+        str_replace:
+          template: {get_file: fragments/hostname.yaml}
+          params:
+            "$hostname": {get_param: server_hostname}
 
   openshift_configure_auth:
     type: "OS::Heat::SoftwareConfig"
