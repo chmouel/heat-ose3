@@ -149,6 +149,7 @@ resources:
     type: "OS::Heat::MultipartMime"
     properties:
       parts:
+        - config: {get_resource: openshift_hostname}
         - config: {get_resource: write_heat_params}
         - config: {get_resource: openshift_user}
         - config: {get_resource: rhel_config}
