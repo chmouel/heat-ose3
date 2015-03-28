@@ -9,6 +9,18 @@ parameters:
     default: rhel71
     description: glance image used to boot the server
 
+  server_hostname:
+    description: OpenShift Master Host Name
+    type: string
+    default: ose3-master.example.com
+    constraints:
+        - length:
+            min: 1
+            max: 64
+        - allowed_pattern: "^[a-zA-Z][a-zA-Z0-9-.]*$"
+          description: |
+            Must begin with a letter and contain only alphanumeric characters.
+
   server_flavor:
     type: string
     default: m1.medium
@@ -83,6 +95,12 @@ resources:
       group: ungrouped
       config: {get_file: fragments/ssh_config.sh}
 
+  run_install:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config: {get_file: fragments/run_install.sh}
+
   docker:
     type: "OS::Heat::SoftwareConfig"
     properties:
@@ -95,12 +113,23 @@ resources:
       group: ungrouped
       config: {get_file: fragments/openshift-user.yaml}
 
-  run_install:
+  openshift_user:
     type: "OS::Heat::SoftwareConfig"
     properties:
       group: ungrouped
-      config: {get_file: fragments/run_install.sh}
+      config: {get_file: fragments/openshift-user.yaml}
 
+  openshift_configure_auth:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config: {get_file: fragments/openshift_configure_auth.sh}
+
+  openshift_provision_defaults:
+    type: "OS::Heat::SoftwareConfig"
+    properties:
+      group: ungrouped
+      config: {get_file: fragments/openshift_provision_defaults.sh}
 
   cfn_signal:
     type: "OS::Heat::SoftwareConfig"
@@ -123,6 +152,8 @@ resources:
         - config: {get_resource: docker}
         - config: {get_resource: ssh_config}
         - config: {get_resource: run_install}
+        - config: {get_resource: openshift_configure_auth}
+        - config: {get_resource: openshift_provision_defaults}
         - config: {get_resource: cfn_signal}
 
   master:
@@ -130,7 +161,7 @@ resources:
     properties:
       image: {get_param: server_image}
       flavor: {get_param: server_flavor}
-      key_name: { get_param: ssh_key_name}
-
+      key_name: {get_param: ssh_key_name}
+      name: {get_param: server_hostname }
       user_data_format: RAW
       user_data: {get_resource: node_init}
