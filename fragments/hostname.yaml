@@ -1,4 +1,5 @@
 #cloud-config
+# manage_etc_hosts: true # rhel7.1 cloud image does not seem to have jinja2 so
+                         # that screwd up it
 hostname: $hostname
 fqdn: $hostname
-manage_etc_hosts: true
